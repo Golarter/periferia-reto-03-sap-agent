@@ -23,7 +23,8 @@ export async function runToolLoop(adapter:LlmAdapter,prompt:string,userMessage:s
    else{
     try{
      const pkg=await readPackage(caso,ctx),v=await validate(caso,pkg,ctx);
-     if(name==="oc_leer_paquete")data=JSON.parse(await tools.oc_leer_paquete.execute({caso},ctx));
+     if(!v.apta&&name!=="oc_leer_paquete"&&name!=="oc_validar")data={ok:false,error:"Solicitud bloqueada; no se permite construir payload, generar evidencia ni crear OC",bloqueos:v.bloqueos.map(x=>x.codigo)};
+     else if(name==="oc_leer_paquete")data=JSON.parse(await tools.oc_leer_paquete.execute({caso},ctx));
      else if(name==="oc_validar")data=JSON.parse(await tools.oc_validar.execute({caso,paquete:pkg},ctx));
      else if(name==="oc_construir_payload")data=JSON.parse(await tools.oc_construir_payload.execute({caso,paquete:pkg,derivados:v.derivados},ctx));
      else if(name==="oc_generar_evidencia")data=JSON.parse(await tools.oc_generar_evidencia.execute({caso},ctx));
