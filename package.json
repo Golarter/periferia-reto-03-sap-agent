@@ -6,6 +6,7 @@
     "dev": "tsx src/server.ts",
     "demo": "tsx demo.ts",
     "test:controls": "tsx tests/controls.ts",
+    "test:concurrency": "tsx tests/sap-concurrency.ts",
     "sync:module": "tsx scripts/sync-module.ts",
     "check": "tsc --noEmit",
     "start": "tsx src/server.ts"

@@ -19,6 +19,7 @@ Abrir **http://localhost:3000**. Un solo comando (`npm run dev`) levanta la inte
 npm run check
 npm run demo
 npm run test:controls
+npm run test:concurrency
 npm run sync:module
 ```
 
@@ -29,7 +30,7 @@ La demostración limpia `out/` al empezar y muestra seis escenarios, incluyendo 
 | Variable | Uso |
 |---|---|
 | `GEMINI_API_KEY` | API key de Gemini, exclusivamente backend, opcional para desarrollar sin IA |
-| `GEMINI_MODEL` | Modelo configurable, por defecto gemini-2.5-flash |
+| `GEMINI_MODEL` | Modelo configurable, por defecto gemini-3.5-flash-lite |
 | `PORT` | Puerto HTTP, por defecto 3000 |
 | `MAX_TOOL_ITERATIONS` | Tope de turnos por sesión, por defecto 16 |
 | `MAX_SESSION_TOKENS` | Presupuesto estimado de caracteres/tokens de sesión |
@@ -63,7 +64,7 @@ Los fixtures originales son de solo lectura. `out/` y `.env` se excluyen de Git.
 
 ## Enlace de evaluación
 
-Publicar el puerto **3000** desde VS Code > pestaña **Ports** > Forward Port > Visibility: Public. Copiar la URL HTTPS asignada por VS Code y mantener el equipo encendido durante la defensa. La dirección se incorpora al README al obtenerla.
+La URL pública de la defensa es **https://reto.golarte.online**, conectada mediante Cloudflare Tunnel al servidor `http://localhost:3000` y verificada por HTTPS (`GET /api/health` devuelve HTTP 200). No se requiere VS Code Port Forwarding ni abrir puertos del router. `Cloudflared` está configurado como servicio Windows automático. La aplicación Node se inicia con la sesión Windows mediante `scripts/start-server.ps1`, registrado en `HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run` como `PeriferiaReto03`. El equipo debe permanecer encendido y la sesión iniciada durante la defensa. Para deshabilitar este inicio automático: `Remove-ItemProperty 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run' -Name PeriferiaReto03`.
 
 ## Limitaciones del prototipo
 

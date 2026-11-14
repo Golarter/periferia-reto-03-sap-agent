@@ -25,11 +25,11 @@ Comportamiento del asistente, conocimiento del proceso, herramientas y transport
 
 Al recibir `sol-00N`, el orquestador invoca de forma auditable `oc_leer_paquete`, `oc_validar`, `oc_construir_payload`, `oc_generar_evidencia` y `oc_crear` según corresponda. Devuelve el resultado de cada fase al chat. Ante bloqueos no construye ni crea. Ante confirmaciones construye y detiene el turno; exige `confirmo` en un mensaje posterior desde la misma sesión antes de ejecutar creación. Mantiene presupuesto de turnos y tokens estimado por sesión y responde con errores legibles.
 
-La narración opcional de Gemini se genera después de ejecutar los controles: el proveedor no controla los montos ni las decisiones de autorización. Este diseño es una decisión de seguridad y fiabilidad. El modelo puede ejecutar un **ciclo adicional de function calling nativo de Gemini** sobre las cinco funciones con esquemas derivados de Zod (máximo ocho iteraciones). Todas sus solicitudes de lectura se reconstruyen usando el caso autorizado, mientras que la creación permanece exclusivamente en manos del orquestador con controles y confirmación humana. Por tanto, el LLM participa realmente en la invocación de herramientas de consulta, pero no puede saltarse RC1–RC10 ni autorizar gastos por sí mismo. Este ciclo requiere una API key para verificarlo en vivo.
+La narración opcional de Gemini se genera después de ejecutar los controles: el proveedor no controla los montos ni las decisiones de autorización. Este diseño es una decisión de seguridad y fiabilidad. La interfaz `LlmAdapter.enviar(mensajes, herramientas)` desacopla al proveedor del ciclo. El modelo puede ejecutar un **ciclo adicional de function calling nativo de Gemini** sobre las cinco funciones con esquemas derivados de Zod (máximo ocho iteraciones). Todas sus solicitudes de lectura se reconstruyen usando el caso autorizado, mientras que la creación permanece exclusivamente en manos del orquestador con controles y confirmación humana. Por tanto, el LLM participa realmente en la invocación de herramientas de consulta, pero no puede saltarse RC1–RC10 ni autorizar gastos por sí mismo. Este ciclo requiere una API key para verificarlo en vivo.
 
 ## 4. Modelo
 
-Google Gemini mediante `@google/genai` y variable `GEMINI_API_KEY`, modelo `GEMINI_MODEL` (por defecto `gemini-2.5-flash`). Se elige por su API TypeScript y la posibilidad de obtener cuota gratuita. El motor y `demo.ts` no requieren esta clave. Para una estimación de 10.000 tokens de entrada y 2.000 de salida, la tarifa estándar publicada de Gemini 2.5 Flash (USD 0,30/M input y USD 2,50/M output) equivale a **aprox. USD 0,008 por solicitud fuera de cuota gratuita**; puede variar por iteraciones y tokens de razonamiento. En el nivel gratuito los tokens estándar están listados como gratuitos, sujetos a límites. Fuente: https://ai.google.dev/gemini-api/docs/pricing. La respuesta del ciclo se limita a 900 tokens por iteración, ocho iteraciones y timeout total de 20 s.
+Google Gemini mediante `@google/genai` y variable `GEMINI_API_KEY`, modelo `GEMINI_MODEL` (por defecto `gemini-3.5-flash-lite`). Se elige por su API TypeScript y la posibilidad de obtener cuota gratuita. El motor y `demo.ts` no requieren esta clave. Para una estimación de 10.000 tokens de entrada y 2.000 de salida, la tarifa estándar publicada de Gemini 3.5 Flash-Lite (USD 0,30/M input y USD 2,50/M output) equivale a **aprox. USD 0,008 por solicitud fuera de cuota gratuita**; puede variar por iteraciones y tokens de razonamiento. En el nivel gratuito los tokens estándar están listados como gratuitos, sujetos a límites. Fuente: https://ai.google.dev/gemini-api/docs/pricing. La respuesta del ciclo se limita a 900 tokens por iteración, ocho iteraciones y timeout total de 20 s. Para la URL pública se limita el consumo a 20 solicitudes por IP cada 10 minutos y 250 solicitudes globales por día; esto protege parcialmente la cuota gratuita, no sustituye autenticación.
 
 ## 5. Matriz de controles
 
@@ -66,7 +66,7 @@ La presencia de factura previa a solicitud es un síntoma de que el control de c
 
 ## 8. Decisiones y trade-offs
 
-1. JSONL local frente a PostgreSQL: despliegue y evaluación rápidos; no apto para concurrencia o fallos.
+1. JSONL local frente a PostgreSQL: despliegue y evaluación rápidos; la escritura se serializa con una cola en memoria para evitar duplicados por concurrencia dentro de un proceso (probada con 12 operaciones simultáneas). Para despliegues multiproceso sigue siendo necesaria una base transaccional.
 2. Controles TypeScript frente a decisiones del LLM: evita alucinaciones e inyección, pero reduce flexibilidad.
 3. HTML plano frente a React: interfaz funcional y desplegable sin compilación; menos modularidad visual.
 4. TXT con SHA-256 y PDF: ambos se generan del mismo contenido con pdf-lib para conservar paridad y cubrir P0/P1.
@@ -84,7 +84,7 @@ Los maestros son exhaustivos para la prueba; los seis paquetes de entrada son ej
 | HU2 Controles | Hecho | Reglas vivas y dueños de políticas |
 | HU3 Payload y trazabilidad | Hecho | Mapping real SAP |
 | HU4 Evidencia TXT y PDF | Hecho | Firma digital / attachments SAP |
-| HU5 Crear e idempotencia | Hecho | Concurrencia y transacciones |
+| HU5 Crear e idempotencia | Hecho | Transacciones distribuidas/multiproceso |
 | HU6 Manejo de errores | Hecho para fixtures | Errores corporativos y retry granular |
 | Front y sesión | Hecho | Identidad y persistencia multiusuario |
 | Gemini real | Implementado; falta validación con clave | Integración verificada y observabilidad productiva |

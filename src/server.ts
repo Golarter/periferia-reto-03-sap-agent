@@ -12,6 +12,19 @@ const maxTurns=Number(process.env.MAX_TOOL_ITERATIONS||16),maxSessionTokens=Numb
 const basePrompt=await fs.readFile(path.join(root,"agent","prompt.md"),"utf8");
 const knowledge=await fs.readFile(path.join(root,"src","knowledge","ordenes-compra.md"),"utf8");
 const context={directory:root,sessionId:""};
+// Límite de solicitudes para proteger la cuota gratuita de la API en el enlace público.
+const quota=new Map<string,{start:number,count:number}>();
+let globalQuota={start:Date.now(),count:0};
+app.use("/api/chat",(req,res,next)=>{
+ const now=Date.now(),ip=String(req.headers["cf-connecting-ip"]||req.ip||"unknown");
+ const q=quota.get(ip)??{start:now,count:0};
+ if(now-q.start>600000){q.start=now;q.count=0}
+ if(now-globalQuota.start>86400000)globalQuota={start:now,count:0};
+ if(q.count>=20||globalQuota.count>=250)return res.status(429).json({error:"Límite de solicitudes alcanzado. Reintenta más tarde."});
+ q.count++;globalQuota.count++;quota.set(ip,q);
+ if(quota.size>2000)for(const [key,v] of quota)if(now-v.start>600000)quota.delete(key);
+ next();
+});
 type Call={name:string;args:unknown;result:unknown;ts:string};
 app.get("/api/health",(_req,res)=>res.json({ok:true,provider:model?.provider||"sin-configurar",model:model?.model||null}));
 app.get("/api/sessions/:id",(req,res)=>{const s=sessions.get(req.params.id);res.status(s?200:404).json(s??{error:"Sesión no encontrada"})});
@@ -60,7 +73,7 @@ app.post("/api/chat",async(req,res)=>{
   }
   if(model&&caseName){
    try{
-    const agent=await runToolLoop(process.env.GEMINI_API_KEY!,model.model,basePrompt+"\n"+knowledge+"\nResultado VERIFICADO del orquestador (no modificar):\n"+reply,message,caseName,{...context,sessionId:id});
+    const agent=await runToolLoop(model,basePrompt+"\n"+knowledge+"\nResultado VERIFICADO del orquestador (no modificar):\n"+reply,message,caseName,{...context,sessionId:id});
     for(const call of agent.calls)record(call.name,call.args,call.result);
     if(agent.reply&&agent.reply.length>20)reply+="\n\nAnálisis del agente Gemini:\n"+agent.reply;
    }catch(e){reply+="\n\nAviso: no fue posible completar el ciclo del modelo ("+(e instanceof Error?e.message:"error") + "). Se conserva el resultado determinista."}
