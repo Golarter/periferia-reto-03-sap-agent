@@ -75,7 +75,14 @@ app.post("/api/chat",async(req,res)=>{
    try{
     const agent=await runToolLoop(model,basePrompt+"\n"+knowledge+"\nResultado VERIFICADO del orquestador (no modificar):\n"+reply,message,caseName,{...context,sessionId:id});
     for(const call of agent.calls)record(call.name,call.args,call.result);
-    if(agent.reply&&agent.reply.length>20)reply+="\n\nAnálisis del agente Gemini:\n"+agent.reply;
+    if(agent.reply&&agent.reply.length>20){
+     let explanation=agent.reply;
+     // La decisión de creación/confirmación pertenece al motor, nunca al texto LLM.
+     if(!needsConfirmation)explanation=explanation.split("\n").filter(line=>!/\?[^\n]*(confirm|autoriza|aprobar)|\bconfirm(a|as|ación).*\b(crea|orden|OC)\b/i.test(line)).join("\n");
+     explanation=explanation.replace(/```(?:json)?[\s\S]*?```/gi,"[Payload completo disponible en oc_construir_payload]");
+     explanation=explanation.trim().slice(0,1800);
+     if(explanation)reply+="\n\nAnálisis del agente Gemini:\n"+explanation;
+    }
    }catch(e){reply+="\n\nAviso: no fue posible completar el ciclo del modelo ("+(e instanceof Error?e.message:"error") + "). Se conserva el resultado determinista."}
   }
   s.history.push({role:"assistant",content:reply});await log();
