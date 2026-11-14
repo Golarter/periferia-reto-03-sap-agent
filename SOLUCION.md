@@ -29,7 +29,7 @@ La narración opcional de Gemini se genera después de ejecutar los controles: e
 
 ## 4. Modelo
 
-Google Gemini mediante `@google/genai` y variable `GEMINI_API_KEY`, modelo `GEMINI_MODEL` (por defecto `gemini-2.5-flash`). Se elige por su API TypeScript y la posibilidad de obtener cuota gratuita. El motor y `demo.ts` no requieren esta clave. El costo por caso se calcula sobre tokens reales y las tarifas vigentes del proyecto; no se presupone costo cero fuera de cuota. Se limita la respuesta a 800 tokens y el proveedor a 20 s.
+Google Gemini mediante `@google/genai` y variable `GEMINI_API_KEY`, modelo `GEMINI_MODEL` (por defecto `gemini-2.5-flash`). Se elige por su API TypeScript y la posibilidad de obtener cuota gratuita. El motor y `demo.ts` no requieren esta clave. Para una estimación de 10.000 tokens de entrada y 2.000 de salida, la tarifa estándar publicada de Gemini 2.5 Flash (USD 0,30/M input y USD 2,50/M output) equivale a **aprox. USD 0,008 por solicitud fuera de cuota gratuita**; puede variar por iteraciones y tokens de razonamiento. En el nivel gratuito los tokens estándar están listados como gratuitos, sujetos a límites. Fuente: https://ai.google.dev/gemini-api/docs/pricing. La respuesta del ciclo se limita a 900 tokens por iteración, ocho iteraciones y timeout total de 20 s.
 
 ## 5. Matriz de controles
 
